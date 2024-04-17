@@ -1,28 +1,44 @@
 import pandas as pd
-from datetime import datetime
-import datetime
 
-df_people = pd.read_excel("People.xlsx")
 
-current_year = datetime.datetime.now().year
-df_people = pd.read_excel("People.xlsx")
+def calculate_age(birth_year, year_played):
+    return year_played - birth_year
 
-# Step 2: Calculate age of each player based on finalGame year
-df_people["age"] = df_people.apply(
-    lambda row: (
-        pd.to_datetime(row["finalGame"]).year - row["birthYear"]
-        if not pd.isnull(row["finalGame"])
-        else current_year - row["birthYear"]
-    ),
-    axis=1,
-)
 
-# Step 3: Associate name with player ID
-df_people["fullName"] = df_people["nameLast"] + ", " + df_people["nameFirst"]
+def main():
+    # Read People.xlsx file
+    people_df = pd.read_excel("People.xlsx")
 
-# Step 4: Print first 10 entries
-print("First 10 entries:")
-for i in range(10):
-    print(
-        f"{df_people.iloc[i]['playerID']} - {df_people.iloc[i]['fullName']} - {df_people.iloc[i]['age']}"
-    )
+    # Read Batting.xlsx file
+    batting_df = pd.read_excel("Batting.xlsx")
+
+    # Merge the two dataframes on playerID
+    merged_df = pd.merge(people_df, batting_df, on="playerID", how="inner")
+
+    # Counter to track the number of players processed
+    player_count = 0
+
+    # Group by playerID and iterate through each group
+    for playerID, group in merged_df.groupby("playerID"):
+        # Extract player's name
+        player_name = f"{group['nameLast'].iloc[0]}, {group['nameFirst'].iloc[0]}"
+
+        # Calculate age for each year played
+        age_list = []
+        for index, row in group.iterrows():
+            age = calculate_age(row["birthYear"], row["yearID"])
+            age_list.append(age)
+
+        # Print player's ID, name, and age list
+        print(f"{playerID} - {player_name}: {age_list}")
+
+        # Increment player count
+        player_count += 1
+
+        # Check if 10 players have been processed
+        if player_count == 10:
+            break
+
+
+if __name__ == "__main__":
+    main()
